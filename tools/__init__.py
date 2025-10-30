@@ -6,3 +6,4 @@ from .blob import BlobContainerClient
 from .keyvault import KeyVaultClient
 from .aisearch import AISearchClient
 from .doc_intelligence import DocumentIntelligenceClient
+from .customized_embedding_ai import call_embedding_api_single

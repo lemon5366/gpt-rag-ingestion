@@ -2,6 +2,7 @@ import logging
 import os
 
 from .chunkers.doc_analysis_chunker import DocAnalysisChunker
+from .chunkers.pdf_analysis_chunker import PdfAnalysisChunker
 from .chunkers.multimodal_chunker import MultimodalChunker
 from .chunkers.langchain_chunker import LangChainChunker
 from .chunkers.spreadsheet_chunker import SpreadsheetChunker
@@ -20,6 +21,10 @@ class ChunkerFactory:
         self.docint_40_api = docint_client.docint_40_api 
         _multimodality = os.getenv("MULTIMODAL", "false").lower()
         self.multimodality = _multimodality in ["true", "1", "yes"]
+
+        #switch for whether use code to chunk the pdf file
+        _chunk_pdf_locally = os.getenv("CHUNK_PDF_LOCALLY", "false").lower()
+        self.chunk_pdf_locally = _chunk_pdf_locally in ["true", "1", "yes"]
 
     def get_chunker(self, data):
         """
@@ -43,7 +48,9 @@ class ChunkerFactory:
         elif extension in ('xlsx', 'xls'):
             return SpreadsheetChunker(data)
         elif extension in ('pdf', 'png', 'jpeg', 'jpg', 'bmp', 'tiff'):
-            if self.multimodality:
+            if(extension == 'pdf' and self.chunk_pdf_locally):
+                return PdfAnalysisChunker(data)
+            elif self.multimodality:
                 return MultimodalChunker(data)
             else:
                 return DocAnalysisChunker(data)

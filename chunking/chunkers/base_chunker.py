@@ -3,7 +3,7 @@ import os
 import re
 
 from charset_normalizer import detect
-from tools import AzureOpenAIClient, GptTokenEstimator
+from tools import AzureOpenAIClient, GptTokenEstimator, call_embedding_api_single
 from utils.file_utils import get_file_extension, get_filepath_from_data
 
 class BaseChunker:
@@ -140,6 +140,8 @@ class BaseChunker:
             self.document_bytes = None
             logging.warning(f"[base_chunker][{self.filename}] Document bytes not provided.")
         self.embeddings_vector_size = int(os.getenv("AZURE_EMBEDDINGS_VECTOR_SIZE", "3072"))
+        _use_customized_embedding_model = os.getenv("USE_CUSTOMIZED_EMBEDDING", "false").lower()
+        self.use_customized_embedding_model = _use_customized_embedding_model in ["true", "1", "yes"]
         
     def get_chunks(self):
         """Abstract method to be implemented by subclasses."""
@@ -207,7 +209,10 @@ class BaseChunker:
 
         # Use summary for embedding if available; otherwise, use truncated content
         embedding_text = embedding_text if embedding_text else truncated_content
-        content_vector = self.aoai_client.get_embeddings(embedding_text)
+        if self.use_customized_embedding_model:
+            content_vector = call_embedding_api_single(embedding_text)
+        else:
+            content_vector = self.aoai_client.get_embeddings(embedding_text)
 
         return {
             "chunk_id": chunk_id,
